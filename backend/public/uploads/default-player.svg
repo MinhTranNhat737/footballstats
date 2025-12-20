@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+  <rect width="300" height="300" fill="#667eea"/>
+  <circle cx="150" cy="120" r="50" fill="#fff" opacity="0.8"/>
+  <path d="M 100 200 Q 150 220 200 200 L 200 250 Q 150 280 100 250 Z" fill="#fff" opacity="0.8"/>
+  <text x="150" y="285" font-family="Arial" font-size="20" fill="#fff" text-anchor="middle" opacity="0.6">Player Photo</text>
+</svg>

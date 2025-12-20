@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Stats - Backend API</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+        
+        h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .search-box input {
+            padding: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .players-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        
+        .player-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .player-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+        }
+        
+        .player-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .player-rating {
+            display: inline-block;
+            background: rgba(255,255,255,0.3);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .player-info {
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+        
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+        
+        #message {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            display: none;
+            background: white;
+            font-weight: 600;
+        }
+        
+        #message.success {
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+        
+        #message.error {
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+        
+        /* Modal Player Card */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+        
+        .modal-content {
+            position: relative;
+            margin: 3% auto;
+            width: 400px;
+            animation: slideIn 0.4s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: scale(0.8) translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .player-card-fifa {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 3px solid #ffd700;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .player-card-fifa::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 150px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            opacity: 0.3;
+            z-index: 0;
+        }
+        
+        .card-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 30px;
+            color: white;
+            cursor: pointer;
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.2);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .card-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+        
+        .card-header {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .card-overall {
+            font-size: 5em;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+            line-height: 1;
+        }
+        
+        .card-position {
+            font-size: 1.8em;
+            color: #ffd700;
+            font-weight: bold;
+            margin-top: -10px;
+        }
+        
+        .card-name {
+            font-size: 2em;
+            color: white;
+            font-weight: bold;
+            margin-top: 10px;
+            text-transform: uppercase;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .card-info {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        
+        .info-item {
+            text-align: center;
+            color: white;
+        }
+        
+        .info-label {
+            font-size: 0.85em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        .card-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 12px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .stat-name {
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .stat-value {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        .stat-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            margin-top: 5px;
+            overflow: hidden;
+        }
+        
+        .stat-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+            transition: width 0.5s ease;
+        }
+        
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .card-actions .btn {
+            flex: 1;
+            margin: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚽ FOOTBALL STATS</h1>
+            <p>Hệ thống quản lý cầu thủ - Backend API</p>
+        </header>
+        
+        <div id="message"></div>
+        
+        <div class="main-content">
+            <div class="card">
+                <h2 id="formTitle">➕ Thêm Cầu Thủ</h2>
+                <form id="playerForm">
+                    <div class="form-group">
+                        <label>Tên *</label>
+                        <input type="text" id="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Vị trí *</label>
+                        <select id="position" required>
+                            <option value="">Chọn vị trí</option>
+                            <option value="GK">GK</option>
+                            <option value="CB">CB</option>
+                            <option value="LB">LB</option>
+                            <option value="RB">RB</option>
+                            <option value="CDM">CDM</option>
+                            <option value="CM">CM</option>
+                            <option value="CAM">CAM</option>
+                            <option value="LW">LW</option>
+                            <option value="RW">RW</option>
+                            <option value="ST">ST</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Tuổi</label>
+                        <input type="number" id="age" min="16" max="45">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Quốc tịch</label>
+                        <input type="text" id="nationality">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Câu lạc bộ</label>
+                        <input type="text" id="club">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Overall</label>
+                        <input type="number" id="overall" min="1" max="99">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Pace</label>
+                        <input type="number" id="pace" min="1" max="99" value="50">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Shooting</label>
+                        <input type="number" id="shooting" min="1" max="99" value="50">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Passing</label>
+                        <input type="number" id="passing" min="1" max="99" value="50">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Dribbling</label>
+                        <input type="number" id="dribbling" min="1" max="99" value="50">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Defending</label>
+                        <input type="number" id="defending" min="1" max="99" value="50">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Physical</label>
+                        <input type="number" id="physical" min="1" max="99" value="50">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Ảnh cầu thủ</label>
+                        <input type="file" id="imageInput" accept="image/*">
+                        <div id="imagePreview" style="margin-top: 10px; display: none;">
+                            <img id="previewImg" style="max-width: 200px; max-height: 200px; border-radius: 10px; border: 2px solid #667eea;" />
+                            <button type="button" class="btn btn-cancel" onclick="removeImage()" style="margin-top: 5px; display: block;">Xóa ảnh</button>
+                        </div>
+                        <input type="hidden" id="photoUrl" value="">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Thêm</button>
+                    <button type="button" class="btn btn-cancel" id="cancelBtn" style="display:none" onclick="resetForm()">Hủy</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2>📋 Danh Sách Cầu Thủ</h2>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Tìm kiếm...">
+                </div>
+                <div class="players-grid" id="playersList">
+                    <p style="text-align:center;color:#999">Đang tải...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Player Card -->
+    <div id="playerModal" class="modal">
+        <div class="modal-content">
+            <div class="player-card-fifa">
+                <span class="card-close" onclick="closeModal()">&times;</span>
+                <div id="playerCardContent"></div>
+                <div class="card-actions">
+                    <button class="btn btn-primary" onclick="editFromCard()">✏️ Sửa</button>
+                    <button class="btn btn-cancel" onclick="closeModal()">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api/players';
+        let selectedPlayerId = null;
+        let isEditMode = false;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadPlayers();
+            
+            const searchInput = document.getElementById('searchInput');
+            let searchTimeout;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => loadPlayers(e.target.value), 300);
+            });
+            
+            // Xử lý preview ảnh
+            const imageInput = document.getElementById('imageInput');
+            imageInput.addEventListener('change', handleImageSelect);
+        });
+
+        let isImageUploading = false;
+        let imageUploaded = false;
+
+        async function handleImageSelect(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            // Validate file size (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                showMessage('Ảnh quá lớn! Tối đa 10MB', 'error');
+                e.target.value = '';
+                return;
+            }
+            
+            // Validate file type
+            if (!file.type.match(/image\/(jpeg|jpg|png|gif)/)) {
+                showMessage('Chỉ chấp nhận file ảnh (JPG, PNG, GIF)', 'error');
+                e.target.value = '';
+                return;
+            }
+            
+            // Preview
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                document.getElementById('previewImg').src = event.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            // Upload
+            isImageUploading = true;
+            imageUploaded = false;
+            showMessage('Đang upload ảnh...', 'success');
+            
+            const formData = new FormData();
+            formData.append('image', file);
+            
+            try {
+                const res = await fetch('http://localhost:3000/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    document.getElementById('photoUrl').value = data.path;
+                    imageUploaded = true;
+                    showMessage('✅ Upload ảnh thành công: ' + data.filename, 'success');
+                    console.log('Ảnh đã upload:', data.path);
+                } else {
+                    showMessage('❌ Lỗi upload: ' + data.message, 'error');
+                    e.target.value = '';
+                    removeImage();
+                }
+            } catch (error) {
+                showMessage('❌ Lỗi upload: ' + error.message, 'error');
+                e.target.value = '';
+                removeImage();
+            } finally {
+                isImageUploading = false;
+            }
+        }
+
+        function removeImage() {
+            document.getElementById('imageInput').value = '';
+            document.getElementById('photoUrl').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            imageUploaded = false;
+        }
+
+        async function loadPlayers(search = '') {
+            try {
+                const url = search ? API_URL + '?search=' + encodeURIComponent(search) : API_URL;
+                const res = await fetch(url);
+                const data = await res.json();
+                
+                if (data.success) {
+                    displayPlayers(data.data);
+                }
+            } catch (error) {
+                showMessage('Lỗi: ' + error.message, 'error');
+            }
+        }
+
+        function displayPlayers(players) {
+            const container = document.getElementById('playersList');
+            
+            if (players.length === 0) {
+                container.innerHTML = '<p style="text-align:center;color:#999">Không có cầu thủ</p>';
+                return;
+            }
+            
+            container.innerHTML = players.map(p => `
+                <div class="player-card" onclick="selectPlayer(${p.player_id})">
+                    <img src="${p.photo_url || '/uploads/default-player.svg'}" alt="${p.name}" style="width: 100%; height: 150px; object-fit: cover; border-radius: 10px 10px 0 0; margin: -15px -15px 10px -15px;" />
+                    <div class="player-name">
+                        ${p.name}
+                        <span class="player-rating">${p.overall || 'N/A'}</span>
+                    </div>
+                    <div class="player-info">
+                        ${p.position} • ${p.age || 'N/A'} tuổi • ${p.club || p.nationality || 'N/A'}
+                    </div>
+                    <div class="stats-row">
+                        <div class="stat">
+                            <div class="stat-value">${p.pace || 0}</div>
+                            <div class="stat-label">PAC</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${p.shooting || 0}</div>
+                            <div class="stat-label">SHO</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${p.passing || 0}</div>
+                            <div class="stat-label">PAS</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${p.dribbling || 0}</div>
+                            <div class="stat-label">DRI</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${p.defending || 0}</div>
+                            <div class="stat-label">DEF</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-value">${p.physical || 0}</div>
+                            <div class="stat-label">PHY</div>
+                        </div>
+                    </div>
+                    <div class="player-actions">
+                        <button class="btn btn-danger" onclick="event.stopPropagation(); deletePlayer(${p.player_id})">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function selectPlayer(id) {
+            selectedPlayerId = id;
+            
+            try {
+                const res = await fetch(API_URL + '/' + id);
+                const data = await res.json();
+                
+                if (data.success) {
+                    showPlayerCard(data.data);
+                }
+            } catch (error) {
+                showMessage('Lỗi: ' + error.message, 'error');
+            }
+        }
+
+        function showPlayerCard(player) {
+            const content = document.getElementById('playerCardContent');
+            
+            content.innerHTML = `
+                <img src="${player.photo_url || '/uploads/default-player.svg'}" alt="${player.name}" style="width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 20px;" />
+                <div class="card-header">
+                    <div class="card-overall">${player.overall || 'N/A'}</div>
+                    <div class="card-position">${player.position}</div>
+                    <div class="card-name">${player.name}</div>
+                </div>
+                
+                <div class="card-info">
+                    <div class="info-item">
+                        <div class="info-label">Tuổi</div>
+                        <div class="info-value">${player.age || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Quốc tịch</div>
+                        <div class="info-value">${player.nationality || 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Câu lạc bộ</div>
+                        <div class="info-value">${player.club || 'N/A'}</div>
+                    </div>
+                </div>
+                
+                <div class="card-stats">
+                    <div class="stat-item">
+                        <div>
+                            <div class="stat-name">🏃 PAC</div>
+                            <div class="stat-bar">
+                                <div class="stat-fill" style="width: ${player.pace || 0}%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-value">${player.pace || 0}</div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <div>
+                            <div class="stat-name">⚽ SHO</div>
+                            <div class="stat-bar">
+                                <div class="stat-fill" style="width: ${player.shooting || 0}%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-value">${player.shooting || 0}</div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <div>
+                            <div class="stat-name">🎯 PAS</div>
+                            <div class="stat-bar">
+                                <div class="stat-fill" style="width: ${player.passing || 0}%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-value">${player.passing || 0}</div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <div>
+                            <div class="stat-name">✨ DRI</div>
+                            <div class="stat-bar">
+                                <div class="stat-fill" style="width: ${player.dribbling || 0}%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-value">${player.dribbling || 0}</div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <div>
+                            <div class="stat-name">🛡️ DEF</div>
+                            <div class="stat-bar">
+                                <div class="stat-fill" style="width: ${player.defending || 0}%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-value">${player.defending || 0}</div>
+                    </div>
+                    
+                    <div class="stat-item">
+                        <div>
+                            <div class="stat-name">💪 PHY</div>
+                            <div class="stat-bar">
+                                <div class="stat-fill" style="width: ${player.physical || 0}%"></div>
+                            </div>
+                        </div>
+                        <div class="stat-value">${player.physical || 0}</div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('playerModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('playerModal').style.display = 'none';
+        }
+
+        function editFromCard() {
+            if (!selectedPlayerId) return;
+            
+            closeModal();
+            
+            fetch(API_URL + '/' + selectedPlayerId)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const p = data.data;
+                        document.getElementById('name').value = p.name || '';
+                        document.getElementById('position').value = p.position || '';
+                        document.getElementById('age').value = p.age || '';
+                        document.getElementById('nationality').value = p.nationality || '';
+                        document.getElementById('club').value = p.club || '';
+                        document.getElementById('overall').value = p.overall || '';
+                        document.getElementById('pace').value = p.pace || 0;
+                        document.getElementById('shooting').value = p.shooting || 0;
+                        document.getElementById('passing').value = p.passing || 0;
+                        document.getElementById('dribbling').value = p.dribbling || 0;
+                        document.getElementById('defending').value = p.defending || 0;
+                        document.getElementById('physical').value = p.physical || 0;
+                        
+                        // Hiển thị ảnh nếu có
+                        if (p.photo_url) {
+                            document.getElementById('photoUrl').value = p.photo_url;
+                            document.getElementById('previewImg').src = p.photo_url;
+                            document.getElementById('imagePreview').style.display = 'block';
+                            imageUploaded = true;
+                        } else {
+                            imageUploaded = false;
+                        }
+                        
+                        isEditMode = true;
+                        document.getElementById('formTitle').textContent = '✏️ Sửa Cầu Thủ';
+                        document.getElementById('submitBtn').textContent = 'Cập Nhật';
+                        document.getElementById('cancelBtn').style.display = 'block';
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                })
+                .catch(error => showMessage('Lỗi: ' + error.message, 'error'));
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('playerModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        async function deletePlayer(id) {
+            if (!confirm('Bạn có chắc chắn muốn xóa cầu thủ này?')) return;
+            
+            try {
+                const res = await fetch(API_URL + '/' + id, { method: 'DELETE' });
+                const data = await res.json();
+                
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    loadPlayers();
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Lỗi: ' + error.message, 'error');
+            }
+        }
+
+        document.getElementById('playerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Validate ảnh đang upload
+            if (isImageUploading) {
+                showMessage('⏳ Vui lòng đợi ảnh upload xong...', 'error');
+                return;
+            }
+            
+            // Validate ảnh bắt buộc
+            const photoUrl = document.getElementById('photoUrl').value;
+            if (!photoUrl) {
+                showMessage('❌ Vui lòng upload ảnh cầu thủ trước khi thêm!', 'error');
+                return;
+            }
+            
+            console.log('Submit form với photo_url:', photoUrl);
+            
+            const data = {
+                name: document.getElementById('name').value,
+                position: document.getElementById('position').value,
+                age: document.getElementById('age').value || null,
+                nationality: document.getElementById('nationality').value || null,
+                club: document.getElementById('club').value || null,
+                overall: document.getElementById('overall').value || null,
+                pace: document.getElementById('pace').value || 0,
+                shooting: document.getElementById('shooting').value || 0,
+                passing: document.getElementById('passing').value || 0,
+                dribbling: document.getElementById('dribbling').value || 0,
+                defending: document.getElementById('defending').value || 0,
+                physical: document.getElementById('physical').value || 0,
+                photo_url: photoUrl
+            };
+            
+            console.log('Dữ liệu gửi lên server:', data);
+            
+            try {
+                let res;
+                if (isEditMode) {
+                    res = await fetch(API_URL + '/' + selectedPlayerId, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                } else {
+                    res = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                }
+                
+                const result = await res.json();
+                console.log('Kết quả từ server:', result);
+                
+                if (result.success) {
+                    showMessage('✅ ' + result.message + ' (Ảnh: ' + (data.photo_url ? 'Có' : 'Không') + ')', 'success');
+                    resetForm();
+                    await loadPlayers();
+                    
+                    // Scroll to view new player
+                    setTimeout(() => {
+                        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                    }, 500);
+                } else {
+                    showMessage('❌ ' + result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('Lỗi: ' + error.message, 'error');
+            }
+        });
+
+        function resetForm() {
+            removeImage();
+            document.getElementById('playerForm').reset();
+            isEditMode = false;
+            selectedPlayerId = null;
+            document.getElementById('formTitle').textContent = '➕ Thêm Cầu Thủ';
+            document.getElementById('submitBtn').textContent = 'Thêm';
+            document.getElementById('cancelBtn').style.display = 'none';
+        }
+
+        function showMessage(msg, type) {
+            const el = document.getElementById('message');
+            el.textContent = msg;
+            el.className = type;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 3000);
+        }
+    </script>
+</body>
+</html>
